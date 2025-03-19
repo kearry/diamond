@@ -1,21 +1,33 @@
-// src/app/dashboard/layout.tsx
+"use client";
+
 import Sidebar from '../(components)/Sidebar';
 import TopBar from '../(components)/TopBar';
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/app/api/auth/[...nextauth]";
-import { redirect } from 'next/navigation';
-import { Toaster } from "@/components/ui/toaster"  // Import Toaster
+import { useSession } from "next-auth/react";
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
-
-export default async function DashboardLayout({
+export default function DashboardLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-        redirect("/api/auth/signin")
+    const { data: session, status } = useSession();
+    const router = useRouter();
+
+    useEffect(() => {
+        console.log("Dashboard layout - Auth status:", status);
+
+        // Only redirect if we're definitely not authenticated
+        if (status === "unauthenticated") {
+            console.log("Not authenticated, redirecting to login");
+            router.push("/login");
+        }
+    }, [status, router]);
+
+    if (status === "loading") {
+        return <div className="flex items-center justify-center h-screen">Loading...</div>;
     }
+
     return (
         <div className="flex h-screen">
             <Sidebar />
@@ -25,7 +37,6 @@ export default async function DashboardLayout({
                     {children}
                 </main>
             </div>
-            <Toaster />
         </div>
     );
 }
